@@ -31,6 +31,7 @@ Instead of juggling 5+ terminal tabs for your API backend, frontend, worker queu
 - **🔌 Remote Unix Socket / Named Pipe IPC Daemon**: Control running services from another terminal tab (`gryd service restart <svc>`, `gryd service stop <svc>`, `gryd service exec <svc> -- <cmd>`).
 - **🧪 Pre-Flight Boot Verification (`gryd test`)**: Automated integration test boot that verifies port readiness, safely terminates all child processes, and outputs standard CI exit codes or machine-readable JSON (`--json`).
 - **🌿 Integrated Version Control (`gryd vc`)**: Full-screen Git branch selector with live search, push workflows, and branch merging.
+- **🌐 Built-in Local Domain Reverse Proxy & Routing**: Route local traffic using clean domains (e.g., `http://api.localhost` or `http://api.gryd.test`) completely free without paid DNS or external accounts. Manage hosts with `gryd hosts list` and `gryd hosts sync`.
 - **🚀 Built-in Auto-Update System**: Automatically checks GitHub releases in the background, notifies you when an update is available, and upgrades with `gryd update`.
 
 ---
@@ -337,6 +338,22 @@ gryd vc push -m "feat: new feature"
 
 # Merge another branch safely
 gryd vc merge feature/login
+```
+
+---
+
+### `gryd hosts [command]`
+Inspect and synchronize local development domain names (such as `api.localhost` or `*.gryd.test`) into your system hosts file for offline, zero-configuration local routing:
+
+```bash
+# List all active local domains for your services
+gryd hosts list
+
+# Synchronize .test domains into /etc/hosts (or Windows hosts)
+sudo gryd hosts sync
+
+# Remove Gryd managed entries from hosts file
+sudo gryd hosts clean
 ```
 
 ---

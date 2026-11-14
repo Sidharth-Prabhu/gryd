@@ -13,6 +13,7 @@ import (
 
 	"github.com/loom-cli/gryd/internal/config"
 	"github.com/loom-cli/gryd/internal/logger"
+	"github.com/loom-cli/gryd/internal/proxy"
 	"github.com/loom-cli/gryd/internal/state"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -40,6 +41,7 @@ type Runner struct {
 	footerMgr   *PinnedFooterManager
 	watcher     *FileWatcher
 	ipcServer   *IPCServer
+	proxyServer *proxy.ReverseProxyServer
 	mu          sync.Mutex
 	stopOnce    sync.Once
 }
@@ -93,6 +95,14 @@ func New(cfg *config.Config, log *zap.Logger) (*Runner, error) {
 		r.ipcServer.Start()
 	}
 
+	// Initialize local domain reverse proxy
+	proxyServer := proxy.NewReverseProxyServer(cfg, log)
+	if err := proxyServer.Start(); err == nil {
+		r.proxyServer = proxyServer
+		// Attempt to sync /etc/hosts for any non-.localhost domains
+		_ = proxy.SyncHostsFile(proxyServer.GetDomains())
+	}
+
 	return r, nil
 }
 
@@ -120,6 +130,9 @@ func (r *Runner) Run(ctx context.Context) error {
 	defer func() {
 		if r.ipcServer != nil {
 			_ = r.ipcServer.Close()
+		}
+		if r.proxyServer != nil {
+			_ = r.proxyServer.Close()
 		}
 	}()
 

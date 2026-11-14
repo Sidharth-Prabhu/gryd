@@ -16,6 +16,7 @@ type Service struct {
 	Directory   string             `yaml:"directory"`
 	Command     string             `yaml:"command"`
 	Port        int                `yaml:"port,omitempty"`
+	Domain      string             `yaml:"domain,omitempty"`
 	DependsOn   DependsOnMap       `yaml:"depends_on,omitempty"`
 	HealthCheck *HealthCheckConfig `yaml:"healthcheck,omitempty"`
 	Env         map[string]string  `yaml:"env,omitempty"`
@@ -27,6 +28,7 @@ type Service struct {
 type Settings struct {
 	HealthCheck      bool `yaml:"health_check"`
 	RestartOnFailure bool `yaml:"restart_on_failure"`
+	ProxyPort        int  `yaml:"proxy_port,omitempty"`
 }
 
 // Dependency defines configuration for an external infrastructure sidecar (e.g., PostgreSQL, Redis).
