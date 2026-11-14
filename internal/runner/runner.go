@@ -95,14 +95,15 @@ func New(cfg *config.Config, log *zap.Logger) (*Runner, error) {
 		r.ipcServer.Start()
 	}
 
-	// Initialize local domain reverse proxy
-	proxyServer := proxy.NewReverseProxyServer(cfg, log)
-	if err := proxyServer.Start(); err == nil {
-		r.proxyServer = proxyServer
-		// Attempt to sync /etc/hosts for any non-.localhost domains
-		_ = proxy.SyncHostsFile(proxyServer.GetDomains())
-		if proxyServer.Port() != 80 {
-			_ = proxy.SetupPortForwarding(proxyServer.Port())
+	// Initialize local domain reverse proxy only if explicit domains are configured in gryd.yaml
+	if proxy.HasConfiguredDomains(cfg) {
+		proxyServer := proxy.NewReverseProxyServer(cfg, log)
+		if err := proxyServer.Start(); err == nil {
+			r.proxyServer = proxyServer
+			_ = proxy.SyncHostsFile(proxyServer.GetDomains())
+			if proxyServer.Port() != 80 {
+				_ = proxy.SetupPortForwarding(proxyServer.Port())
+			}
 		}
 	}
 

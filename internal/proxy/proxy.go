@@ -15,6 +15,19 @@ import (
 	"go.uber.org/zap"
 )
 
+// HasConfiguredDomains returns true if any service in the config explicitly specifies a domain.
+func HasConfiguredDomains(cfg *config.Config) bool {
+	if cfg == nil {
+		return false
+	}
+	for _, svc := range cfg.Services {
+		if strings.TrimSpace(svc.Domain) != "" {
+			return true
+		}
+	}
+	return false
+}
+
 // Route maps a domain or hostname to a backend target port.
 type Route struct {
 	Domain      string
@@ -81,7 +94,7 @@ code { background: #221F1E; padding: 0.2rem 0.4rem; border-radius: 4px; color: #
 </html>`, svcName, svc.Port)
 		}
 
-		// 1. Explicit domain configured
+		// 1. Explicit domain configured (e.g. api.gryd.test)
 		if svc.Domain != "" {
 			d := strings.ToLower(strings.TrimSpace(svc.Domain))
 			routes[d] = &Route{
@@ -92,9 +105,9 @@ code { background: #221F1E; padding: 0.2rem 0.4rem; border-radius: 4px; color: #
 			}
 		}
 
-		// 2. Default automatic conventions:
+		// 2. Default automatic conventions that resolve without /etc/hosts:
 		// <service>.localhost and <service>.<project>.localhost
-		// e.g. api.localhost and api.myapp.localhost
+		// Under RFC 6761, *.localhost is resolved natively by OS/browser to 127.0.0.1 with zero sudo/elevation!
 		defaultLocalhost := fmt.Sprintf("%s.localhost", strings.ToLower(svcName))
 		if _, exists := routes[defaultLocalhost]; !exists {
 			routes[defaultLocalhost] = &Route{
@@ -109,17 +122,6 @@ code { background: #221F1E; padding: 0.2rem 0.4rem; border-radius: 4px; color: #
 		if _, exists := routes[projLocalhost]; !exists {
 			routes[projLocalhost] = &Route{
 				Domain:      projLocalhost,
-				ServiceName: svcName,
-				TargetPort:  svc.Port,
-				Proxy:       proxy,
-			}
-		}
-
-		// Also register <service>.<project>.test and <service>.gryd.test
-		testDomain := fmt.Sprintf("%s.gryd.test", strings.ToLower(svcName))
-		if _, exists := routes[testDomain]; !exists {
-			routes[testDomain] = &Route{
-				Domain:      testDomain,
 				ServiceName: svcName,
 				TargetPort:  svc.Port,
 				Proxy:       proxy,
@@ -278,7 +280,7 @@ code { background: #221F1E; padding: 0.2rem 0.4rem; border-radius: 4px; font-siz
   </table>
   <div class="notice">
     Domains ending in <code>.localhost</code> resolve natively without editing your hosts file.<br>
-    For custom domains like <code>.test</code>, run <code>sudo gryd hosts sync</code>.
+    To assign custom domains, run <code>gryd config --domain-routing</code>.
   </div>
 </div>
 </body>

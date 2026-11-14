@@ -84,13 +84,15 @@ directories or uses the local directory.`,
 			return err
 		}
 
-		// Start local domain reverse proxy during TUI session
-		proxyServer := proxy.NewReverseProxyServer(cfg, nil)
-		if err := proxyServer.Start(); err == nil {
-			defer proxyServer.Close()
-			_ = proxy.SyncHostsFile(proxyServer.GetDomains())
-			if proxyServer.Port() != 80 {
-				_ = proxy.SetupPortForwarding(proxyServer.Port())
+		// Start local domain reverse proxy during TUI session only if explicit domains are configured
+		if proxy.HasConfiguredDomains(cfg) {
+			proxyServer := proxy.NewReverseProxyServer(cfg, nil)
+			if err := proxyServer.Start(); err == nil {
+				defer proxyServer.Close()
+				_ = proxy.SyncHostsFile(proxyServer.GetDomains())
+				if proxyServer.Port() != 80 {
+					_ = proxy.SetupPortForwarding(proxyServer.Port())
+				}
 			}
 		}
 
