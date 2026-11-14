@@ -9,7 +9,7 @@ import (
 
 // Version information set at build time or defaults
 var (
-	Version   = "0.2.0"
+	Version   = "0.2.1"
 	Commit    = "none"
 	BuildDate = "unknown"
 	Release   = "Phase 2 Release"
