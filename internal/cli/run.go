@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/loom-cli/gryd/internal/config"
 	"github.com/loom-cli/gryd/internal/logger"
+	"github.com/loom-cli/gryd/internal/proxy"
 	"github.com/loom-cli/gryd/internal/runner"
 	"github.com/loom-cli/gryd/internal/state"
 	"github.com/loom-cli/gryd/internal/tui"
@@ -81,6 +82,13 @@ directories or uses the local directory.`,
 		model, err := tui.NewUIModel(cfg, projectState)
 		if err != nil {
 			return err
+		}
+
+		// Start local domain reverse proxy during TUI session
+		proxyServer := proxy.NewReverseProxyServer(cfg, nil)
+		if err := proxyServer.Start(); err == nil {
+			defer proxyServer.Close()
+			_ = proxy.SyncHostsFile(proxyServer.GetDomains())
 		}
 
 		p := tea.NewProgram(model, tea.WithAltScreen(), tea.WithMouseCellMotion())
