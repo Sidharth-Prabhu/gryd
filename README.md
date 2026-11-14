@@ -342,6 +342,16 @@ gryd vc merge feature/login
 
 ---
 
+### `gryd config [flags]`
+Interactively configure project settings and developer features in `gryd.yaml`:
+
+```bash
+# Interactively assign local subdomains and configure domain routing
+gryd config --domain-routing
+```
+
+---
+
 ### `gryd hosts [command]`
 Inspect and synchronize local development domain names (such as `api.localhost` or `*.gryd.test`) into your system hosts file for offline, zero-configuration local routing:
 
