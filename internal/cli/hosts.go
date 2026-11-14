@@ -88,7 +88,10 @@ var hostsSyncCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("\n\033[1;32m✓ Successfully synchronized local domains in system hosts file!\033[0m\n\n")
+		// Also configure port 80 forwarding so URLs work without specifying :8080
+		_ = proxy.SetupPortForwarding(8080)
+
+		fmt.Printf("\n\033[1;32m✓ Successfully synchronized local domains and port 80 routing!\033[0m\n\n")
 		return nil
 	},
 }
@@ -101,7 +104,8 @@ var hostsCleanCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("\n\033[1;32m✓ Cleaned up all Gryd entries from system hosts file.\033[0m\n\n")
+		proxy.RemovePortForwarding()
+		fmt.Printf("\n\033[1;32m✓ Cleaned up all Gryd entries and port routing from system.\033[0m\n\n")
 		return nil
 	},
 }

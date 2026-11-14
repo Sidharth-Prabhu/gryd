@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/loom-cli/gryd/internal/config"
@@ -75,6 +76,7 @@ func runRemoveDomainRouting() error {
 			fmt.Printf("  \033[1;31m✗\033[0m Could not update hosts file: %v\n", err)
 			fmt.Println("  Please run: \033[1msudo gryd hosts clean\033[0m")
 		} else {
+			proxy.RemovePortForwarding()
 			fmt.Println("  \033[1;32m✓\033[0m Cleaned up system hosts file successfully!")
 		}
 	}
@@ -110,9 +112,16 @@ func runDomainRoutingConfig() error {
 
 	fmt.Printf("✓ Using base domain: \033[1;32m.%s\033[0m\n\n", baseDomain)
 
-	// 2. Iterate through each service with a configured port
+	// 2. Iterate through each service deterministically sorted
+	var svcNames []string
+	for svcName := range cfg.Services {
+		svcNames = append(svcNames, svcName)
+	}
+	sort.Strings(svcNames)
+
 	configuredDomains := make(map[string]string)
-	for svcName, svc := range cfg.Services {
+	for _, svcName := range svcNames {
+		svc := cfg.Services[svcName]
 		defaultSub := strings.ToLower(svcName)
 		currentDomain := svc.Domain
 		promptDefault := defaultSub
@@ -181,7 +190,8 @@ func runDomainRoutingConfig() error {
 				fmt.Printf("  \033[1;31m✗\033[0m Could not update hosts file automatically: %v\n", err)
 				fmt.Println("  Please run: \033[1msudo gryd hosts sync\033[0m (or run terminal as Administrator on Windows)")
 			} else {
-				fmt.Printf("  \033[1;32m✓\033[0m Hosts file synchronized successfully!\n")
+				_ = proxy.SetupPortForwarding(8080)
+				fmt.Printf("  \033[1;32m✓\033[0m Hosts file and local port routing synchronized successfully!\n")
 			}
 		} else {
 			fmt.Println("You can sync your hosts file at any time by running: \033[1msudo gryd hosts sync\033[0m")
