@@ -174,6 +174,7 @@ services:
     directory: api
     command: uvicorn main:app --reload --port 8000
     port: 8000
+    domain: api.gryd.test
     healthcheck:
       http: http://localhost:8000/health
       interval: 2s
@@ -192,6 +193,7 @@ services:
     directory: web
     command: npm run dev
     port: 3000
+    domain: web.gryd.test
     depends_on:
       backend:
         condition: service_healthy
@@ -353,20 +355,22 @@ gryd config --domain-routing
 gryd config --remove-domain-routing
 ```
 
+> **Cross-Platform Privilege Elevation**: When updating domains with extensions like `.test`, Gryd automatically triggers native privilege escalation (macOS Touch ID / system dialog, Linux Polkit / sudo, or Windows UAC prompt) to synchronize your system hosts file without requiring manual editor changes.
+
 ---
 
 ### `gryd hosts [command]`
 Inspect and synchronize local development domain names (such as `api.localhost` or `*.gryd.test`) into your system hosts file for offline, zero-configuration local routing:
 
 ```bash
-# List all active local domains for your services
+# List all active local domains for your services and their resolution status
 gryd hosts list
 
 # Synchronize .test domains into /etc/hosts (or Windows hosts)
-sudo gryd hosts sync
+gryd hosts sync
 
 # Remove Gryd managed entries from hosts file
-sudo gryd hosts clean
+gryd hosts clean
 ```
 
 ---
