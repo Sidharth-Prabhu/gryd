@@ -282,57 +282,101 @@ func (r *Runner) startServices() error {
 		}
 	}
 
-	for name, svc := range r.cfg.Services {
-		svcDir := r.cfg.WorkingDirectory
-		if svc.Directory != "" {
-			if filepath.IsAbs(svc.Directory) {
-				svcDir = svc.Directory
-			} else {
-				svcDir = filepath.Join(r.cfg.WorkingDirectory, svc.Directory)
+	tiers, err := BuildStartupPlan(r.cfg.Services)
+	if err != nil {
+		return err
+	}
+
+	for tierIdx, tier := range tiers {
+		r.log.Info("Starting service tier", zap.Int("tier", tierIdx+1), zap.Strings("services", tier))
+
+		// 1. Start all services in current tier
+		for _, name := range tier {
+			svc := r.cfg.Services[name]
+			svcDir := r.cfg.WorkingDirectory
+			if svc.Directory != "" {
+				if filepath.IsAbs(svc.Directory) {
+					svcDir = svc.Directory
+				} else {
+					svcDir = filepath.Join(r.cfg.WorkingDirectory, svc.Directory)
+				}
+			}
+
+			if _, err := os.Stat(svcDir); os.IsNotExist(err) {
+				_ = os.MkdirAll(svcDir, 0755)
+			}
+
+			cmd := shellCommand(svc.Command)
+			cmd.Dir = svcDir
+			cmd.Env = os.Environ()
+			for k, v := range svc.Env {
+				cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+			}
+
+			outWriter := r.multiplexer.NewServiceWriter(name)
+			cmd.Stdout = outWriter
+			cmd.Stderr = outWriter
+
+			setProcessGroup(cmd)
+
+			if err := cmd.Start(); err != nil {
+				return fmt.Errorf("failed to start service '%s': %w", name, err)
+			}
+
+			procState := &ProcessState{
+				Name:    name,
+				Service: svc,
+				Cmd:     cmd,
+				Dir:     svcDir,
+				Started: time.Now(),
+			}
+			r.processes[name] = procState
+
+			stateInfo.Processes[name] = state.ProcessInfo{
+				Name:    name,
+				PID:     cmd.Process.Pid,
+				Command: svc.Command,
+			}
+
+			r.log.Info("Service started",
+				zap.String("service", name),
+				zap.Int("pid", cmd.Process.Pid),
+				zap.String("command", svc.Command),
+			)
+		}
+
+		// 2. If subsequent tiers depend on any service in this tier with condition: service_healthy, wait for readiness
+		if tierIdx < len(tiers)-1 {
+			for _, name := range tier {
+				svc := r.cfg.Services[name]
+				// Check if any service in a future tier depends on this service with condition == service_healthy
+				needsHealthy := false
+				for futureIdx := tierIdx + 1; futureIdx < len(tiers); futureIdx++ {
+					for _, futureName := range tiers[futureIdx] {
+						futureSvc := r.cfg.Services[futureName]
+						if depCond, ok := futureSvc.DependsOn[name]; ok {
+							if depCond.Condition == "service_healthy" || svc.HealthCheck != nil {
+								needsHealthy = true
+								break
+							}
+						}
+					}
+					if needsHealthy {
+						break
+					}
+				}
+
+				if needsHealthy {
+					r.log.Info("Waiting for dependency to become healthy", zap.String("service", name))
+					waitCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+					err := WaitForServiceHealth(waitCtx, name, svc, r.log)
+					cancel()
+					if err != nil {
+						r.log.Warn("Dependency healthcheck timed out or failed", zap.String("service", name), zap.Error(err))
+					}
+				}
 			}
 		}
-
-		if _, err := os.Stat(svcDir); os.IsNotExist(err) {
-			_ = os.MkdirAll(svcDir, 0755)
-		}
-
-		cmd := shellCommand(svc.Command)
-		cmd.Dir = svcDir
-		cmd.Env = os.Environ()
-		for k, v := range svc.Env {
-			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
-		}
-
-		outWriter := r.multiplexer.NewServiceWriter(name)
-		cmd.Stdout = outWriter
-		cmd.Stderr = outWriter
-
-		setProcessGroup(cmd)
-
-		if err := cmd.Start(); err != nil {
-			return fmt.Errorf("failed to start service '%s': %w", name, err)
-		}
-
-		procState := &ProcessState{
-			Name:    name,
-			Service: svc,
-			Cmd:     cmd,
-			Dir:     svcDir,
-			Started: time.Now(),
-		}
-		r.processes[name] = procState
-
-		stateInfo.Processes[name] = state.ProcessInfo{
-			Name:    name,
-			PID:     cmd.Process.Pid,
-			Command: svc.Command,
-		}
-
-		r.log.Info("Service started",
-			zap.String("service", name),
-			zap.Int("pid", cmd.Process.Pid),
-			zap.String("command", svc.Command),
-		)
 	}
 
 	// Persist active state to ~/.gryd/run/<project>.json

@@ -161,16 +161,17 @@ func runInitWizard(defaultName string) error {
 		}
 
 		// Dependencies
-		var dependsOn []string
+		var dependsOn config.DependsOnMap
 		if len(configuredServiceNames) > 0 {
 			fmt.Printf("  \033[1;36m? Depends on other services?\033[0m \033[2mAvailable: [%s] (comma-separated, or Enter to skip)\033[0m: ",
 				strings.Join(configuredServiceNames, ", "))
 			depStr, _ := readLineSafely(reader)
 			if depStr != "" {
+				dependsOn = make(config.DependsOnMap)
 				for _, part := range strings.Split(depStr, ",") {
 					part = strings.TrimSpace(part)
 					if part != "" {
-						dependsOn = append(dependsOn, part)
+						dependsOn[part] = config.DepCondition{}
 					}
 				}
 			}

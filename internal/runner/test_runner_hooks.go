@@ -210,7 +210,20 @@ func TestRunWithHooks(ctx context.Context, cfg *config.Config, timeout time.Dura
 					continue
 				}
 
-				if svc.Port > 0 {
+				if svc.HealthCheck != nil {
+					hOk, _ := CheckServiceHealth(testCtx, svc, nil)
+					if hOk {
+						readyStatus[name] = true
+						bootDur := time.Since(procs[0].startTime)
+						serviceBootTime[name] = bootDur
+						if hooks != nil && hooks.OnServiceReady != nil {
+							hooks.OnServiceReady(name, bootDur)
+						} else {
+							fmt.Printf("  \033[1;32m✓\033[0m Service '%s' passed readiness healthcheck (%s)\n",
+								name, bootDur.Round(time.Millisecond))
+						}
+					}
+				} else if svc.Port > 0 {
 					if IsPortInUse(svc.Port) {
 						readyStatus[name] = true
 						bootDur := time.Since(procs[0].startTime)

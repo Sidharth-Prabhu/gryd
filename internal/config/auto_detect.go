@@ -81,7 +81,10 @@ func AutoDetectStack(rootDir string) (*Config, error) {
 				for bName := range cfg.Services {
 					bLower := strings.ToLower(bName)
 					if strings.Contains(bLower, "backend") || strings.Contains(bLower, "api") || strings.Contains(bLower, "server") {
-						s.DependsOn = append(s.DependsOn, bName)
+						if s.DependsOn == nil {
+							s.DependsOn = make(DependsOnMap)
+						}
+						s.DependsOn[bName] = DepCondition{}
 						cfg.Services[sName] = s
 						break
 					}

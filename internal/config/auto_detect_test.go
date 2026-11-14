@@ -73,7 +73,7 @@ services:
 	if frontend.Port != 5173 {
 		t.Errorf("expected frontend port 5173, got %d", frontend.Port)
 	}
-	if len(frontend.DependsOn) == 0 || frontend.DependsOn[0] != "backend" {
+	if _, ok := frontend.DependsOn["backend"]; !ok {
 		t.Errorf("expected frontend to depend on backend, got %v", frontend.DependsOn)
 	}
 

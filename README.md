@@ -17,7 +17,8 @@ Instead of juggling 5+ terminal tabs for your API backend, frontend, worker queu
 
 - **🖥️ Responsive Full-Screen TUI**: Live multi-pane terminal interface powered by Bubble Tea & Lip Gloss, featuring Catppuccin-themed status badges, service navigation, and live scrollable log viewing.
 - **🌍 Native Cross-Platform**: Full first-class support for **macOS** (Apple Silicon & Intel), **Linux** (AMD64 & ARM64), and **Windows** (AMD64 & ARM64).
-- **🛡️ Process Group Isolation & Port Freeing**: Uses native Unix process groups (`pgid`) and Windows taskkill process tree termination. Stopping services guarantees all child processes (`node`, `python`, `uvicorn`, `go`) are terminated without leaving orphaned port listeners (`EADDRINUSE`).
+- **🛡️ Process Group Isolation & Auto-Port Collision Resolution**: Uses native Unix process groups (`pgid`) and Windows taskkill process tree termination. When a port is occupied by a stray process or container, Gryd prompts you interactively to `[K]ill` the process, `[A]ssign` a free port, or `[C]ancel`.
+- **🩺 Dependency Health Checks & Staged Startup**: Define readiness probes (`http:` or `tcp:`) and `depends_on: { service: { condition: service_healthy } }` so frontend services wait for backends/databases to be genuinely ready before booting.
 - **🔍 In-TUI Log Search & Regex Filtering (`/`)**: Real-time log searching with automatic fallback from regex to substring search and keyword highlighting.
 - **🏷️ Log Level Cycling (`l`) & Color Differentiation**: Instantly filter logs by level (`ERROR`, `WARN`, `INFO`) with color-coded syntax highlighting across the TUI and CLI.
 - **📑 Structured JSON Log Parser (`J`)**: Auto-detects structured JSON logs (Zap, Zerolog, Pino) with toggleable viewing modes (`compact` single-line, `pretty` multiline, or `raw`).
@@ -172,6 +173,10 @@ services:
     directory: api
     command: uvicorn main:app --reload --port 8000
     port: 8000
+    healthcheck:
+      http: http://localhost:8000/health
+      interval: 2s
+      retries: 5
     env:
       ENVIRONMENT: development
       PORT: "8000"
@@ -187,7 +192,8 @@ services:
     command: npm run dev
     port: 3000
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     watch:
       - "src/**"
       - "public/**"

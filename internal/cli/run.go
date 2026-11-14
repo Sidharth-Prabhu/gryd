@@ -45,6 +45,11 @@ directories or uses the local directory.`,
 			return err
 		}
 
+		// Check for and resolve any port collisions before starting services
+		if err := runner.InteractiveResolvePortConflicts(cfg, os.Stdin, os.Stdout); err != nil {
+			return err
+		}
+
 		// If running in a non-interactive terminal or raw redirect, fallback to plain streaming runner
 		if !term.IsTerminal(int(os.Stdout.Fd())) {
 			zapLog, err := logger.NewZapLogger(debug)

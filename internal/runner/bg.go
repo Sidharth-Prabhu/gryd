@@ -107,46 +107,82 @@ func ReloadBackgroundProject(projectName string) (*state.ProjectState, error) {
 		Processes:   make(map[string]state.ProcessInfo),
 	}
 
-	for name, svc := range cfg.Services {
-		svcDir := cfg.WorkingDirectory
-		if svc.Directory != "" {
-			if filepath.IsAbs(svc.Directory) {
-				svcDir = svc.Directory
-			} else {
-				svcDir = filepath.Join(cfg.WorkingDirectory, svc.Directory)
+	tiers, err := BuildStartupPlan(cfg.Services)
+	if err != nil {
+		return nil, err
+	}
+
+	for tierIdx, tier := range tiers {
+		for _, name := range tier {
+			svc := cfg.Services[name]
+			svcDir := cfg.WorkingDirectory
+			if svc.Directory != "" {
+				if filepath.IsAbs(svc.Directory) {
+					svcDir = svc.Directory
+				} else {
+					svcDir = filepath.Join(cfg.WorkingDirectory, svc.Directory)
+				}
+			}
+
+			if _, err := os.Stat(svcDir); os.IsNotExist(err) {
+				_ = os.MkdirAll(svcDir, 0755)
+			}
+
+			cmd := shellCommand(svc.Command)
+			cmd.Dir = svcDir
+			cmd.Env = os.Environ()
+			for k, v := range svc.Env {
+				cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+			}
+
+			outWriter := multiplexer.NewServiceWriter(name)
+			cmd.Stdout = outWriter
+			cmd.Stderr = outWriter
+
+			setProcessGroup(cmd)
+
+			if err := cmd.Start(); err != nil {
+				return nil, fmt.Errorf("failed to restart service '%s': %w", name, err)
+			}
+
+			newState.Processes[name] = state.ProcessInfo{
+				Name:    name,
+				PID:     cmd.Process.Pid,
+				Command: svc.Command,
+			}
+
+			go func(c *exec.Cmd) {
+				_ = c.Wait()
+			}(cmd)
+		}
+
+		// Wait for health if future tiers depend on services in this tier
+		if tierIdx < len(tiers)-1 {
+			for _, name := range tier {
+				svc := cfg.Services[name]
+				needsHealthy := false
+				for futureIdx := tierIdx + 1; futureIdx < len(tiers); futureIdx++ {
+					for _, futureName := range tiers[futureIdx] {
+						futureSvc := cfg.Services[futureName]
+						if depCond, ok := futureSvc.DependsOn[name]; ok {
+							if depCond.Condition == "service_healthy" || svc.HealthCheck != nil {
+								needsHealthy = true
+								break
+							}
+						}
+					}
+					if needsHealthy {
+						break
+					}
+				}
+
+				if needsHealthy {
+					waitCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+					_ = WaitForServiceHealth(waitCtx, name, svc, nil)
+					cancel()
+				}
 			}
 		}
-
-		if _, err := os.Stat(svcDir); os.IsNotExist(err) {
-			_ = os.MkdirAll(svcDir, 0755)
-		}
-
-		cmd := shellCommand(svc.Command)
-		cmd.Dir = svcDir
-		cmd.Env = os.Environ()
-		for k, v := range svc.Env {
-			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
-		}
-
-		outWriter := multiplexer.NewServiceWriter(name)
-		cmd.Stdout = outWriter
-		cmd.Stderr = outWriter
-
-		setProcessGroup(cmd)
-
-		if err := cmd.Start(); err != nil {
-			return nil, fmt.Errorf("failed to restart service '%s': %w", name, err)
-		}
-
-		newState.Processes[name] = state.ProcessInfo{
-			Name:    name,
-			PID:     cmd.Process.Pid,
-			Command: svc.Command,
-		}
-
-		go func(c *exec.Cmd) {
-			_ = c.Wait()
-		}(cmd)
 	}
 
 	if err := state.SaveState(newState); err != nil {

@@ -13,13 +13,14 @@ import (
 
 // Service defines configuration for an individual service/process.
 type Service struct {
-	Directory string            `yaml:"directory"`
-	Command   string            `yaml:"command"`
-	Port      int               `yaml:"port,omitempty"`
-	DependsOn []string          `yaml:"depends_on,omitempty"`
-	Env       map[string]string `yaml:"env,omitempty"`
-	Watch     []string          `yaml:"watch,omitempty"`
-	Ignore    []string          `yaml:"ignore,omitempty"`
+	Directory   string             `yaml:"directory"`
+	Command     string             `yaml:"command"`
+	Port        int                `yaml:"port,omitempty"`
+	DependsOn   DependsOnMap       `yaml:"depends_on,omitempty"`
+	HealthCheck *HealthCheckConfig `yaml:"healthcheck,omitempty"`
+	Env         map[string]string  `yaml:"env,omitempty"`
+	Watch       []string           `yaml:"watch,omitempty"`
+	Ignore      []string           `yaml:"ignore,omitempty"`
 }
 
 // Settings contains global execution options for the project.
@@ -119,7 +120,7 @@ func (c *Config) ValidateAndResolve() error {
 		}
 
 		// Ensure dependencies exist
-		for _, dep := range svc.DependsOn {
+		for dep := range svc.DependsOn {
 			if dep == name {
 				return fmt.Errorf("service '%s' cannot depend on itself", name)
 			}
