@@ -89,6 +89,9 @@ directories or uses the local directory.`,
 		if err := proxyServer.Start(); err == nil {
 			defer proxyServer.Close()
 			_ = proxy.SyncHostsFile(proxyServer.GetDomains())
+			if proxyServer.Port() != 80 {
+				_ = proxy.SetupPortForwarding(proxyServer.Port())
+			}
 		}
 
 		p := tea.NewProgram(model, tea.WithAltScreen(), tea.WithMouseCellMotion())

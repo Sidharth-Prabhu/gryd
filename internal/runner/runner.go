@@ -101,6 +101,9 @@ func New(cfg *config.Config, log *zap.Logger) (*Runner, error) {
 		r.proxyServer = proxyServer
 		// Attempt to sync /etc/hosts for any non-.localhost domains
 		_ = proxy.SyncHostsFile(proxyServer.GetDomains())
+		if proxyServer.Port() != 80 {
+			_ = proxy.SetupPortForwarding(proxyServer.Port())
+		}
 	}
 
 	return r, nil
