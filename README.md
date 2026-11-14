@@ -348,6 +348,9 @@ Interactively configure project settings and developer features in `gryd.yaml`:
 ```bash
 # Interactively assign local subdomains and configure domain routing
 gryd config --domain-routing
+
+# Revert and clear domain routing for all services
+gryd config --remove-domain-routing
 ```
 
 ---

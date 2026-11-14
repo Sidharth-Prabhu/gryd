@@ -92,7 +92,11 @@ func SyncHostsFile(domains []string) error {
 	newContent := cleanContent + grydBlock
 	err = os.WriteFile(hostsPath, []byte(newContent), 0644)
 	if err != nil {
-		return fmt.Errorf("permission denied writing to %s. To resolve custom domains like .test, run: sudo gryd hosts sync", hostsPath)
+		// Attempt elevated writing (macOS Touch ID/dialog, Linux pkexec/sudo, Windows UAC)
+		elevErr := writeWithElevatedPrivileges(hostsPath, newContent)
+		if elevErr != nil {
+			return fmt.Errorf("permission denied writing to %s. Run 'sudo gryd hosts sync' or execute as Administrator", hostsPath)
+		}
 	}
 
 	return nil
@@ -130,7 +134,11 @@ func RemoveHostsEntries() error {
 
 	if changed {
 		cleanContent := strings.TrimRight(strings.Join(newLines, "\n"), "\n") + "\n"
-		return os.WriteFile(hostsPath, []byte(cleanContent), 0644)
+		err := os.WriteFile(hostsPath, []byte(cleanContent), 0644)
+		if err != nil {
+			return writeWithElevatedPrivileges(hostsPath, cleanContent)
+		}
+		return nil
 	}
 
 	return nil

@@ -61,4 +61,30 @@ services:
 	if cfg.Services["web"].Domain != "web.gryd.test" {
 		t.Errorf("expected web domain 'web.gryd.test', got '%s'", cfg.Services["web"].Domain)
 	}
+
+	// Test Revert / Remove Domain Routing
+	revertInput := "n\n"
+	r2, w2, _ := os.Pipe()
+	os.Stdin = r2
+	go func() {
+		_, _ = w2.Write([]byte(revertInput))
+		_ = w2.Close()
+	}()
+
+	err = runRemoveDomainRouting()
+	if err != nil {
+		t.Fatalf("runRemoveDomainRouting failed: %v", err)
+	}
+
+	cfgReverted, err := config.Load(configPath)
+	if err != nil {
+		t.Fatalf("failed to reload config: %v", err)
+	}
+
+	if cfgReverted.Services["api"].Domain != "" {
+		t.Errorf("expected empty domain after removal, got '%s'", cfgReverted.Services["api"].Domain)
+	}
+	if cfgReverted.Services["web"].Domain != "" {
+		t.Errorf("expected empty domain after removal, got '%s'", cfgReverted.Services["web"].Domain)
+	}
 }
