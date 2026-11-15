@@ -1,7 +1,10 @@
 # Multi-platform build stage
-FROM --platform=$BUILDPLATFORM golang:1.24-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:alpine AS builder
 
 WORKDIR /src
+
+# Allow Go to automatically fetch required toolchain version
+ENV GOTOOLCHAIN=auto
 
 # Install git and ca-certificates
 RUN apk add --no-cache git ca-certificates tzdata
