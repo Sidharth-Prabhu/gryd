@@ -55,6 +55,7 @@ type Config struct {
 	Services         map[string]Service       `yaml:"services"`
 	Dependencies     map[string]Dependency    `yaml:"dependencies,omitempty"`
 	Profiles         map[string]ProfileConfig `yaml:"profiles,omitempty"`
+	Tools            ToolsMap                 `yaml:"tools,omitempty"`
 	Settings         Settings                 `yaml:"settings"`
 
 	// ActiveProfile is the profile applied to this configuration instance

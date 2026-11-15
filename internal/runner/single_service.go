@@ -67,10 +67,7 @@ func RestartSingleService(projectName, serviceName string) error {
 
 	cmd := shellCommand(svc.Command)
 	cmd.Dir = svcDir
-	cmd.Env = os.Environ()
-	for k, v := range svc.Env {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
-	}
+	cmd.Env = BuildServiceEnv(cfg, svc.Env)
 
 	outWriter := multiplexer.NewServiceWriter(serviceName)
 	cmd.Stdout = outWriter

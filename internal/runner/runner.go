@@ -325,10 +325,7 @@ func (r *Runner) startServices() error {
 
 			cmd := shellCommand(svc.Command)
 			cmd.Dir = svcDir
-			cmd.Env = os.Environ()
-			for k, v := range svc.Env {
-				cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
-			}
+			cmd.Env = BuildServiceEnv(r.cfg, svc.Env)
 
 			outWriter := r.multiplexer.NewServiceWriter(name)
 			cmd.Stdout = outWriter
@@ -441,10 +438,7 @@ func (r *Runner) RestartService(name string) error {
 
 	cmd := shellCommand(svc.Command)
 	cmd.Dir = svcDir
-	cmd.Env = os.Environ()
-	for k, v := range svc.Env {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
-	}
+	cmd.Env = BuildServiceEnv(r.cfg, svc.Env)
 
 	outWriter := r.multiplexer.NewServiceWriter(name)
 	cmd.Stdout = outWriter

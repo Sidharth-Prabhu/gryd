@@ -215,6 +215,11 @@ profiles:
     services: [backend]
   full:
     services: [backend, frontend, worker]
+
+# Optional custom tool paths (if not automatically detected in system PATH)
+tools:
+  pnpm: /opt/homebrew/bin/pnpm
+  python: /usr/local/bin/python3
 ```
 
 ---
@@ -386,6 +391,27 @@ gryd hosts sync
 # Remove Gryd managed entries from hosts file
 gryd hosts clean
 ```
+
+---
+
+### `gryd doctor [project]`
+Inspects and verifies all system prerequisites, binaries, and tool readiness required by your services.
+
+```bash
+# Check all required tools and runtime dependencies for the project
+gryd doctor
+
+# Output diagnostics in machine-readable JSON format (useful for CI pipelines)
+gryd doctor --json
+```
+
+If any tool is installed in a non-standard location or not detected automatically in `$PATH`, define its location under `tools:` in `gryd.yaml`:
+```yaml
+tools:
+  pnpm: /Users/username/Library/pnpm/pnpm
+  python: /usr/local/bin/python3
+```
+Gryd will automatically verify its accessibility and inject its directory into the execution environment when starting services.
 
 ---
 

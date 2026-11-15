@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - **Automated Multi-Platform Packaging & Distribution**: Homebrew Formula automated updates, WinGet package submission pipeline, PowerShell one-line web installer (`install.ps1`), and multi-architecture Docker container images published to GitHub Container Registry (`ghcr.io`).
 
 ### 🚀 Added
+- **`gryd doctor`**: Pre-flight system and tool readiness inspector to verify all required binaries, dependencies, and tool versions across your services.
+- **Custom Tool Paths (`tools:`)**: Support in `gryd.yaml` to specify exact executable paths when tools reside in non-standard directories, with automatic environment injection into service processes.
 - **`gryd config`**: Display current `gryd.yaml` configuration with syntax-highlighted comment headers.
 - **`gryd config --json`**: Output the parsed configuration as clean, indented JSON for CI/CD scripting.
 - **`gryd config --edit` (`-e`)**: Interactively detect available system editors (`nano` and `vim`), prompt the user to choose, save preferred editor to `~/.gryd/preferences.json`, and open `gryd.yaml`.

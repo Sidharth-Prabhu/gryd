@@ -133,10 +133,7 @@ func TestRunWithHooks(ctx context.Context, cfg *config.Config, timeout time.Dura
 
 		cmd := shellCommand(svc.Command)
 		cmd.Dir = svcDir
-		cmd.Env = os.Environ()
-		for k, v := range svc.Env {
-			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
-		}
+		cmd.Env = BuildServiceEnv(cfg, svc.Env)
 
 		outWriter := multiplexer.NewServiceWriter(name)
 		cmd.Stdout = outWriter

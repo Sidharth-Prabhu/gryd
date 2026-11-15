@@ -1,12 +1,15 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/loom-cli/gryd/internal/config"
+	"github.com/loom-cli/gryd/internal/doctor"
 	"github.com/loom-cli/gryd/internal/logger"
 	"github.com/loom-cli/gryd/internal/proxy"
 	"github.com/loom-cli/gryd/internal/runner"
@@ -44,6 +47,26 @@ directories or uses the local directory.`,
 
 		if err := cfg.ApplyProfile(profileFlag); err != nil {
 			return err
+		}
+
+		// Pre-flight check: verify required system tools and runtime dependencies
+		report := doctor.CheckProject(cfg)
+		if !report.AllPassed {
+			missing := report.MissingTools()
+			fmt.Println()
+			fmt.Println(doctor.RenderMissingToolsAlert(missing))
+			fmt.Println()
+			if term.IsTerminal(int(os.Stdout.Fd())) {
+				fmt.Print("? Would you like to proceed anyway? (y/N) [N]: ")
+				reader := bufio.NewReader(os.Stdin)
+				ans, _ := reader.ReadString('\n')
+				ans = strings.ToLower(strings.TrimSpace(ans))
+				if ans != "y" && ans != "yes" {
+					return fmt.Errorf("pre-flight tool check failed: missing %d required tool(s)", len(missing))
+				}
+			} else {
+				return fmt.Errorf("pre-flight tool check failed: missing %d required tool(s)", len(missing))
+			}
 		}
 
 		// Check for and resolve any port collisions before starting services

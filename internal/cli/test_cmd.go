@@ -10,6 +10,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/loom-cli/gryd/internal/config"
+	"github.com/loom-cli/gryd/internal/doctor"
 	"github.com/loom-cli/gryd/internal/runner"
 	"github.com/loom-cli/gryd/internal/state"
 	"github.com/loom-cli/gryd/internal/tui"
@@ -64,6 +65,32 @@ Returns exit code 0 if all services pass, or 1 if any service fails or times out
 
 		if err := cfg.ApplyProfile(profileFlag); err != nil {
 			return err
+		}
+
+		// Pre-flight check: verify required system tools before launching test run
+		report := doctor.CheckProject(cfg)
+		if !report.AllPassed {
+			missing := report.MissingTools()
+			if testJSONFlag {
+				type testJSONOutput struct {
+					Project string                     `json:"project"`
+					Passed  bool                       `json:"passed"`
+					Error   string                     `json:"error,omitempty"`
+					Results []runner.ServiceTestResult `json:"results"`
+				}
+				out := testJSONOutput{
+					Project: cfg.Name,
+					Passed:  false,
+					Error:   fmt.Sprintf("tool check failed: missing %d required tool(s)", len(missing)),
+				}
+				data, _ := json.MarshalIndent(out, "", "  ")
+				fmt.Println(string(data))
+				return nil
+			}
+			fmt.Println()
+			fmt.Println(doctor.RenderMissingToolsAlert(missing))
+			fmt.Println()
+			return fmt.Errorf("pre-flight tool check failed: missing %d required tool(s)", len(missing))
 		}
 
 		// Non-interactive or JSON output mode (e.g. CI / scripts)
