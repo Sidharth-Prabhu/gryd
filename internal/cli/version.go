@@ -9,10 +9,10 @@ import (
 
 // Version information set at build time or defaults
 var (
-	Version   = "0.2.1"
+	Version   = "0.3.0"
 	Commit    = "none"
 	BuildDate = "unknown"
-	Release   = "Phase 2 Release"
+	Release   = "Phase 3 Release"
 )
 
 // FormatVersion returns the formatted version and release information.
