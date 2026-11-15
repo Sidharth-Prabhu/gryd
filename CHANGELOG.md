@@ -11,7 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - **Zero-Config Local Domain Routing**: Access your development microservices via human-friendly custom local domains (e.g. `http://api.gryd.test` or `http://web.localhost`) without remembering port numbers.
 - **Cross-Platform Elevation**: Automatic integration with native OS authorization (macOS Touch ID / system dialog, Linux Polkit / sudo, Windows UAC) for seamless `/etc/hosts` and loopback port forwarding synchronization.
 - **Config Management CLI**: Inspect, format as JSON, or open your `gryd.yaml` in verified terminal editors (`nano` or `vim`) with persistent editor preferences.
-- **Automated Multi-Platform Packaging & Distribution**: Homebrew Formula automated updates, WinGet package submission pipeline, and multi-architecture Docker container images published to GitHub Container Registry (`ghcr.io`).
+- **Automated Multi-Platform Packaging & Distribution**: Homebrew Formula automated updates, WinGet package submission pipeline, PowerShell one-line web installer (`install.ps1`), and multi-architecture Docker container images published to GitHub Container Registry (`ghcr.io`).
 
 ### 🚀 Added
 - **`gryd config`**: Display current `gryd.yaml` configuration with syntax-highlighted comment headers.

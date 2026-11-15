@@ -38,6 +38,11 @@ brew install gryd
 brew upgrade gryd
 ```
 
+#### Windows (PowerShell One-Line Installer)
+```powershell
+irm https://raw.githubusercontent.com/Sidharth-Prabhu/gryd/main/install.ps1 | iex
+```
+
 #### Windows (WinGet)
 ```powershell
 winget install SidharthPrabhu.Gryd

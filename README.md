@@ -50,15 +50,19 @@ brew tap Sidharth-Prabhu/tap
 brew install gryd
 ```
 
-### Windows (via WinGet)
+### Windows (PowerShell One-Line Web Installer)
 
-Install Gryd on Windows using the official Windows Package Manager:
+The quickest way to install Gryd on Windows. Open PowerShell and run:
 
 ```powershell
-winget install gryd
+irm https://raw.githubusercontent.com/Sidharth-Prabhu/gryd/main/install.ps1 | iex
 ```
 
-*Or by Package Identifier:*
+*(Or via GitHub Releases: `irm https://github.com/Sidharth-Prabhu/gryd/releases/latest/download/install.ps1 | iex`)*
+
+This script automatically detects your architecture (`x64` or `arm64`), downloads the latest release into `~/.gryd/bin`, updates your user `PATH`, and sets up Gryd ready for immediate use.
+
+#### Alternative: WinGet
 ```powershell
 winget install SidharthPrabhu.Gryd
 ```
