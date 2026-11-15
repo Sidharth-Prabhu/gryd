@@ -47,7 +47,7 @@ jobs:
       - name: Build All Platform Binaries
         run: |
           mkdir -p dist
-          LDFLAGS="-s -w -X main.version=${VERSION}"
+          LDFLAGS="-s -w -X github.com/loom-cli/gryd/internal/cli.Version=${VERSION} -X github.com/loom-cli/gryd/internal/cli.Commit=${GITHUB_SHA} -X github.com/loom-cli/gryd/internal/cli.BuildDate=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
           # Linux AMD64 & ARM64
           GOOS=linux GOARCH=amd64 go build -ldflags "$LDFLAGS" -o dist/gryd-linux-amd64 ./cmd/gryd
@@ -96,11 +96,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
-          name: ${{ env.TAG }}
+          name: Gryd ${{ env.TAG }}
+          body_path: RELEASE_NOTES.md
           files: |
             artifacts/gryd_*
             artifacts/checksums.txt
-          generate_release_notes: true
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

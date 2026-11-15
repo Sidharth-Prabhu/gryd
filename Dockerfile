@@ -20,7 +20,7 @@ ARG VERSION=dev
 
 # Build the binary with optimizations
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -ldflags="-s -w -X main.version=${VERSION}" -o /out/gryd ./cmd/gryd
+    go build -ldflags="-s -w -X github.com/loom-cli/gryd/internal/cli.Version=${VERSION}" -o /out/gryd ./cmd/gryd
 
 # Final runtime image
 FROM alpine:3.21
