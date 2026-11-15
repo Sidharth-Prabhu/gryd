@@ -70,6 +70,13 @@ func RenderStatusCard(projectName string, cfg *config.Config, st *state.ProjectS
 	if st != nil && st.LogFilePath != "" {
 		metaLines = append(metaLines, fmt.Sprintf("\033[2mLog File:\033[0m     %s", st.LogFilePath))
 	}
+	if cfg != nil {
+		for svcName, svc := range cfg.Services {
+			if svc.Domain != "" {
+				metaLines = append(metaLines, fmt.Sprintf("\033[2mDomain (%s):\033[0m \033[1;36mhttp://%s:8080\033[0m \033[2m(or http://%s)\033[0m", svcName, svc.Domain, svc.Domain))
+			}
+		}
+	}
 
 	// 3. Service Table
 	colNameW := 18

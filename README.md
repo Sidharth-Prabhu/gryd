@@ -345,9 +345,19 @@ gryd vc merge feature/login
 ---
 
 ### `gryd config [flags]`
-Interactively configure project settings and developer features in `gryd.yaml`:
+View, format, edit, or configure project settings and developer features in `gryd.yaml`:
 
 ```bash
+# View the current gryd.yaml file in formatted YAML
+gryd config
+
+# View the configuration formatted in JSON
+gryd config --json
+
+# Open gryd.yaml in your terminal editor (supports nano and vim)
+# Prompts to save your preferred editor on first use
+gryd config --edit
+
 # Interactively assign local subdomains and configure domain routing
 gryd config --domain-routing
 

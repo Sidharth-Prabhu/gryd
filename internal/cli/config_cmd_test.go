@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/loom-cli/gryd/internal/config"
+	"github.com/loom-cli/gryd/internal/state"
 )
 
 func TestDomainRoutingConfigInteractive(t *testing.T) {
@@ -27,11 +28,6 @@ services:
 	configFile = configPath
 	defer func() { configFile = "" }()
 
-	// Simulate user answering:
-	// Base domain: (Enter for default gryd.test)
-	// api subdomain: custom-api
-	// web subdomain: (Enter for default 'web')
-	// sync to hosts: n (skip sudo)
 	input := "\ncustom-api\n\nn\n"
 
 	oldStdin := os.Stdin
@@ -49,7 +45,6 @@ services:
 		t.Fatalf("runDomainRoutingConfig failed: %v", err)
 	}
 
-	// Verify updated config
 	cfg, err := config.Load(configPath)
 	if err != nil {
 		t.Fatalf("failed to reload config: %v", err)
@@ -62,7 +57,6 @@ services:
 		t.Errorf("expected web domain 'web.gryd.test', got '%s'", cfg.Services["web"].Domain)
 	}
 
-	// Test Revert / Remove Domain Routing
 	revertInput := "n\n"
 	r2, w2, _ := os.Pipe()
 	os.Stdin = r2
@@ -86,5 +80,66 @@ services:
 	}
 	if cfgReverted.Services["web"].Domain != "" {
 		t.Errorf("expected empty domain after removal, got '%s'", cfgReverted.Services["web"].Domain)
+	}
+}
+
+func TestShowConfigAndJSON(t *testing.T) {
+	tempDir := t.TempDir()
+	configContent := `name: show-test
+services:
+  api:
+    command: python api.py
+    port: 8000
+`
+	configPath := filepath.Join(tempDir, "gryd.yaml")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	configFile = configPath
+	defer func() { configFile = "" }()
+
+	// Test runShowConfig
+	err := runShowConfig()
+	if err != nil {
+		t.Fatalf("runShowConfig failed: %v", err)
+	}
+
+	// Test runShowJSONConfig
+	err = runShowJSONConfig()
+	if err != nil {
+		t.Fatalf("runShowJSONConfig failed: %v", err)
+	}
+}
+
+func TestEditorPreferences(t *testing.T) {
+	tempDir := t.TempDir()
+	origHome := os.Getenv("HOME")
+	os.Setenv("HOME", tempDir)
+	defer os.Setenv("HOME", origHome)
+
+	// Initially empty
+	if def := state.GetDefaultEditor(); def != "" {
+		t.Errorf("expected empty default editor, got %s", def)
+	}
+
+	// Set default to nano
+	err := state.SetDefaultEditor("nano")
+	if err != nil {
+		t.Fatalf("failed to set default editor: %v", err)
+	}
+
+	if def := state.GetDefaultEditor(); def != "nano" {
+		t.Errorf("expected default editor nano, got %s", def)
+	}
+
+	// Change to vim
+	err = state.SetDefaultEditor("vim")
+	if err != nil {
+		t.Fatalf("failed to set default editor: %v", err)
+	}
+
+	if def := state.GetDefaultEditor(); def != "vim" {
+		t.Errorf("expected default editor vim, got %s", def)
 	}
 }
