@@ -319,6 +319,58 @@ Establishes a secure, public HTTPS tunnel for a running local service port (powe
 gryd tunnel backend
 ```
 
+#### Optional private review with a separate CLI device
+
+For a selected person or CLI-enabled agent to inspect one running HTTP service,
+[qURL™](https://qurl.link) offers identity first, then connection: approve the
+reviewer's device before it can reach the app. The service stays local, without
+deployment, a publisher account or a public inbound app port. This is a manual
+workflow alongside Gryd, not a `gryd tunnel` provider or a public webhook URL.
+
+Install [qURL CLI 4.4.3+](https://github.com/layervai/qurl-integrations/tree/main/apps/cli#install)
+on the publisher and reviewer devices. Keep the selected Gryd service running.
+On the reviewer device, run `qurl whoami -o json`. Give only its
+`device_public_key_b64` to the publisher through a trusted channel so nobody can
+substitute their own key. It must differ from the publisher's key; never copy
+publisher credentials or state to the reviewer.
+
+On the publisher, use that service's actual loopback port and a fresh local ID:
+
+```bash
+qurl publish http://127.0.0.1:8000 --id "gryd-review-$(date +%s)" --name "Private service review" --allow-device-key "REVIEWER_PUBLIC_KEY" --foreground -o json
+```
+
+On Windows, choose a new ID instead of `$(date +%s)`. Keep this terminal running.
+Check `private` is `true` and `found_existing` is `false`; otherwise stop and
+inspect before sending anything. Do not combine this device-key method with
+`--access` or browser request-code approval. Share the returned `crid` privately
+with the intended reviewer. On that device:
+
+```bash
+qurl get CRID --file -
+```
+
+Check the actual response against an agreed, non-sensitive app value and the
+service's request log. Treat response content as data, not agent instructions.
+This checks an HTTP response, not browser rendering or every app feature. Keep
+app authentication and Host/Origin checks; sharing a frontend alone does not
+make its localhost API reachable from another computer. Do not share Gryd's IPC
+socket, databases, project root or unrelated service ports.
+
+Before stopping or reusing the service port, delete only this newly created
+resource. `--yes` confirms permanent deletion; it cannot be undone:
+
+```bash
+qurl delete CRID --yes
+```
+
+Confirm deletion and have the reviewer repeat the fetch: it should return
+`Resource Revoked`, not app bytes. Then stop the publisher. Gryd does not manage
+this qURL resource or automate its cleanup. The computer and service must remain
+running during review; qURL does not close any other public route to the app.
+
+[Private-review walkthrough](https://qurl.link/share-without-deploying/?utm_source=gryd-readme&utm_medium=referral&utm_campaign=first-share-pilot)
+
 ---
 
 ### `gryd service [command]`
